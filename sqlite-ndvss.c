@@ -64,7 +64,7 @@ static similarity_function_f dot_product_func_f = dot_product_similarity_f_basic
 static similarity_function_d dot_product_func_d = dot_product_similarity_d_basic;
 
 // Information about which instruction set is in use. 
-static char g_instruction_set[8] = "none";
+static char g_instruction_set[16] = "none";
 
 // String helper
 #define STR_HELPER(x) #x
@@ -78,7 +78,7 @@ static char g_instruction_set[8] = "none";
     euclidean_func_d         = euclidean_distance_similarity_d_##SUFFIX; \
     dot_product_func_f       = dot_product_similarity_f_##SUFFIX; \
     dot_product_func_d       = dot_product_similarity_d_##SUFFIX; \
-    snprintf(g_instruction_set, 8, "%s", STR(SUFFIX) );
+    snprintf(g_instruction_set, sizeof(g_instruction_set), "%s", STR(SUFFIX) );
 
 
 //----------------------------------------------------------------------------------------
@@ -803,9 +803,13 @@ LOAD_SIMILARITY_FUNCTIONS(neon)
     LOAD_SIMILARITY_FUNCTIONS(neon)
     #endif 
 
+#elif defined(__wasm_simd128__)
+
+    LOAD_SIMILARITY_FUNCTIONS(wasmsimd)
+
 #elif (defined(__GNUC__) || defined(__clang__)) && (defined(__x86_64__) || defined(_M_X64) || defined(__i386__))
-    
-    // For x86_64 do a runtime check for cpu capabilities. 
+
+    // For x86_64 do a runtime check for cpu capabilities.
     int has_sse41   = 0
        ,has_avx     = 0
        ,has_avx2    = 0

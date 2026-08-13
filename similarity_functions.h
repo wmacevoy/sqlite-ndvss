@@ -19,6 +19,14 @@
 
 // This defaults to the basic functions.
 
+#elif defined(__wasm_simd128__)
+
+#include "similarity_functions_wasmsimd.h"
+
+#elif defined(__wasm__) || defined(__EMSCRIPTEN__)
+
+// WASM build without -msimd128 - defaults to the basic functions.
+
 #else
 
 #include "similarity_functions_sse41.h"
