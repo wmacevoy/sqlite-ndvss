@@ -773,6 +773,21 @@ int sqlite3_ndvss_init( sqlite3 *db,
 #if defined(__riscv) && defined(__riscv_vector)
     LOAD_SIMILARITY_FUNCTIONS(rvv)
 #elif defined(__aarch64__) && defined(__linux__)
+    // The SVE2 kernels are only COMPILED when the translation unit is
+    // built with SVE enabled: similarity_functions_sve2.h opens with
+    // `#if defined(__aarch64__) && defined(__ARM_FEATURE_SVE)`, which the
+    // compiler defines only under -march=...+sve (or equivalent).
+    //
+    // Dispatching to them on a RUNTIME check alone therefore references
+    // functions that do not exist in an ordinary aarch64-Linux build, and
+    // the build fails with `error: 'cosine_similarity_f_sve2' undeclared`
+    // and five siblings. A runtime capability check cannot rescue code the
+    // compiler was never asked to emit -- both gates have to agree.
+    //
+    // The Windows AArch64 branch below already gets this right. This is
+    // the same guard, so the two agree.
+    #if defined(__ARM_FEATURE_SVE)
+
     // Detect SVE2
     
     // Make sure SVE2 capability is defined.
@@ -786,6 +801,13 @@ int sqlite3_ndvss_init( sqlite3 *db,
     } else {
         LOAD_SIMILARITY_FUNCTIONS(neon)
     }
+
+    #else
+    // Built without SVE support: NEON is the best available, and is
+    // baseline on every AArch64 CPU, so this is a complete fallback
+    // rather than a degraded one.
+    LOAD_SIMILARITY_FUNCTIONS(neon)
+    #endif
 
 #elif defined(__aarch64__) && defined(__APPLE__)
     
